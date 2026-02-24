@@ -1,0 +1,18 @@
+# Virtual environment
+dec3/
+
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code settings
+.vscode/
+
+# OS files
+.DS_Store
+
+# Large model files (optional)
+*.t7

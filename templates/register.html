@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Register Authorized User</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #101820;
+  color: #f0f0f0;
+  text-align: center;
+  padding: 20px;
+  overflow-x: hidden;
+  margin: 0;
+}
+
+h1 { 
+  color: #00c3ff; 
+  margin-top: 60px;
+}
+
+video, canvas { 
+  border: 2px solid #00c3ff; 
+  border-radius: 10px; 
+  margin-top: 15px; 
+  background: black; 
+}
+
+button {
+  background: #00c3ff; 
+  color: white; 
+  border: none;
+  padding: 10px 20px; 
+  border-radius: 5px; 
+  cursor: pointer;
+  margin: 10px;
+}
+
+button:hover { background: #008fc1; }
+
+input {
+  padding:8px;
+  border-radius:5px;
+  border:none;
+  outline:none;
+}
+
+/* Back button */
+.back-top-left {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: linear-gradient(90deg, #00e0ff, #00ff88);
+  color: #0f2027;
+  border: none;
+  padding: 10px 20px;
+  font-size: 0.95em;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 224, 255, 0.6);
+  transition: all 0.3s ease;
+  z-index: 9999;
+}
+
+.back-top-left:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+}
+
+/* User badge */
+.user-badge {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 195, 255, 0.1);
+  border: 2px solid #00c3ff;
+  border-radius: 40px;
+  padding: 6px 14px;
+  box-shadow: 0 0 15px rgba(0, 195, 255, 0.3);
+}
+
+.user-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #00c3ff;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-icon span {
+  color: #ccc;
+  font-size: 0.7em;
+  opacity: 0.7;
+}
+
+.user-name {
+  color: #00ff88;
+  font-weight: bold;
+  font-size: 1em;
+  text-shadow: 0 0 10px #00ff88;
+}
+</style>
+</head>
+
+<body>
+
+<button id="backBtn" class="back-top-left">⬅ Back to Home</button>
+
+<h1>Register Authorized User</h1>
+
+<p>Enter your name:</p>
+<input id="name" placeholder="Name">
+<br>
+<video id="video" width="400" height="300" autoplay playsinline></video>
+<br>
+<button id="capture">Capture</button>
+<button id="submit">Save Registration</button>
+<div id="msg"></div>
+
+<canvas id="canvas" width="400" height="300" style="display:none"></canvas>
+
+<!-- User Badge -->
+<div class="user-badge">
+  <div class="user-icon">
+    {% if user_image %}
+      <img src="{{ url_for('static', filename=user_image) }}" alt="Authorized User">
+    {% else %}
+      <span>No User</span>
+    {% endif %}
+  </div>
+  <div class="user-name">{{ current_user }}</div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let currentStream = null;
+let capturedImage = null;
+
+// Start camera
+async function startCamera() {
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 480 },
+      audio: false
+    });
+    video.srcObject = currentStream;
+    video.onloadedmetadata = () => video.play();
+  } catch (err) {
+    alert("Camera access blocked. Enable it and reload.");
+  }
+}
+
+startCamera();
+
+// Stop camera
+function stopCamera() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+  }
+}
+
+// Capture
+document.getElementById('capture').onclick = () => {
+  if (video.videoWidth === 0) {
+    alert("Camera not ready yet. Try again.");
+    return;
+  }
+
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  capturedImage = canvas.toDataURL("image/jpeg");
+  document.getElementById('msg').innerText = "📸 Image captured.";
+};
+
+// Submit
+document.getElementById('submit').onclick = async () => {
+  const name = document.getElementById('name').value.trim();
+
+  if (!capturedImage) {
+    alert("Capture an image first!");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("name", name || "authorized");
+  formData.append("image", capturedImage);  // IMPORTANT
+
+  const res = await fetch("/save_face", { method: "POST", body: formData });
+  const j = await res.json();
+  document.getElementById('msg').innerText = j.msg;
+};
+
+// Back button
+document.getElementById('backBtn').onclick = () => {
+  stopCamera();
+  window.location.href = "/";
+};
+
+window.addEventListener("beforeunload", stopCamera);
+</script>
+
+</body>
+</html>

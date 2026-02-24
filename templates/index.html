@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>SecureSense Monitor</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap');
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: radial-gradient(circle at top, #0b0f16, #0f1825, #08121b);
+      color: #d8ffff;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2.8em;
+      margin-bottom: 5px;
+      color: #00eaff;
+      text-shadow: 0 0 18px rgba(0, 255, 255, 0.8);
+      animation: glowText 2s infinite ease-in-out;
+      letter-spacing: 3px;
+    }
+
+    @keyframes glowText {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .card {
+      background: rgba(0, 30, 45, 0.45);
+      padding: 35px 40px;
+      border-radius: 18px;
+      border: 1px solid rgba(0,255,255,0.3);
+      box-shadow: 0 0 25px rgba(0,255,255,0.15);
+      width: 420px;
+      backdrop-filter: blur(12px);
+      animation: fadeIn 1.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px);}
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .label {
+      color: #8cdcff;
+      font-size: 1.0em;
+      letter-spacing: 1px;
+    }
+
+    .value {
+      font-size: 1.15em;
+      margin-bottom: 15px;
+      font-weight: bold;
+      color: #00ffb7;
+      text-shadow: 0 0 10px #00ffb7;
+      transition: all 0.3s ease;
+    }
+
+    /* Glowing signal circle */
+    .pulse-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-bottom: 18px;
+      animation: pulseAnim 2s infinite;
+      box-shadow: 0 0 18px rgba(0,255,136,0.7);
+    }
+
+    @keyframes pulseAnim {
+      0% { transform: scale(1); opacity: 1; background: #0f0; }
+      50% { transform: scale(1.4); opacity: 0.6; background: #0f0; }
+      100% { transform: scale(1); opacity: 1; background: #0f0; }
+    }
+
+    /* Buttons */
+    .btn {
+      margin-top: 25px;
+      padding: 12px 25px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      background: linear-gradient(90deg, #00eaff, #00ff88);
+      color: #00131d;
+      box-shadow: 0 0 12px rgba(0,255,255,0.5);
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      transform: scale(1.07);
+      box-shadow: 0 0 20px rgba(0,255,255,1);
+    }
+
+    footer {
+      position: absolute;
+      bottom: 15px;
+      font-size: 0.9em;
+      opacity: 0.6;
+      letter-spacing: 1px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <h1>SECURESENSE</h1>
+  <div class="pulse-dot" id="pulse"></div>
+
+  <div class="card">
+    <div>
+      <span class="label">System State:</span>
+      <div id="state" class="value">Loading...</div>
+    </div>
+
+    <div>
+      <span class="label">Last Event:</span>
+      <div id="last" class="value">None</div>
+    </div>
+
+    <div>
+      <span class="label">Last Person:</span>
+      <div id="person" class="value">Unknown</div>
+    </div>
+
+    <button class="btn" onclick="window.location.href='/register'">Register User</button>
+    <button class="btn" style="margin-left:10px;" onclick="window.location.href='/breaches'">Breach Images</button>
+  </div>
+
+  <footer>© SecureSense — Smart Protection System</footer>
+
+  <script>
+    async function refresh() {
+      try {
+        const r = await fetch('/status');
+        const j = await r.json();
+
+        document.getElementById("state").innerText = j.state;
+        document.getElementById("last").innerText = j.last_event;
+        document.getElementById("person").innerText = j.last_person || "Unknown";
+
+        const pulse = document.getElementById("pulse");
+        const stateBox = document.getElementById("state");
+
+        if (j.state === "breach") {
+          pulse.style.background = "#ff0033";
+          pulse.style.boxShadow = "0 0 20px #ff0033";
+          stateBox.style.color = "#ff0033";
+          stateBox.style.textShadow = "0 0 10px #ff0033";
+
+        } else if (j.state === "authorized") {
+          pulse.style.background = "#00ff00";
+          pulse.style.boxShadow = "0 0 20px #00ff00";
+          stateBox.style.color = "#00ff00";
+
+        } else {
+          pulse.style.background = "#00ffee";
+          pulse.style.boxShadow = "0 0 20px #00ffee";
+          stateBox.style.color = "#00ffb7";
+        }
+
+      } catch (e) {
+        document.getElementById("state").innerText = "Disconnected";
+      }
+    }
+
+    setInterval(refresh, 1000);
+    refresh();
+  </script>
+
+</body>
+</html>
